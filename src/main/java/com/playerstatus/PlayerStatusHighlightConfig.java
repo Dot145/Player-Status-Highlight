@@ -40,7 +40,7 @@ public interface PlayerStatusHighlightConfig extends Config
 			section = PoisonImmunityHighlight
 	)
 	default Color poisonImmunityColor() {
-		return new Color(133, 222, 59, 100);
+		return new Color(87, 210, 0, 100);
 	}
 
 	@ConfigItem(
@@ -91,7 +91,7 @@ public interface PlayerStatusHighlightConfig extends Config
 			section = DragonfireImmunityHighlight
 	)
 	default Color dragonfireImmunityColor() {
-		return new Color(122, 24, 163, 100);
+		return new Color(107, 0, 149, 100);
 	}
 
 	@ConfigItem(
@@ -142,7 +142,7 @@ public interface PlayerStatusHighlightConfig extends Config
 			section = VenomImmunityHighlight
 	)
 	default Color venomImmunityColor() {
-		return new Color(67, 86, 81, 100);
+		return new Color(0, 147, 70, 100);
 	}
 
 	@ConfigItem(
@@ -192,7 +192,7 @@ public interface PlayerStatusHighlightConfig extends Config
 			section = SuperDragonfireImmunityHighlight
 	)
 	default Color superDragonfireImmunityColor() {
-		return new Color(149, 104, 183, 100);
+		return new Color(190, 107, 255, 100);
 	}
 
 	@ConfigItem(
