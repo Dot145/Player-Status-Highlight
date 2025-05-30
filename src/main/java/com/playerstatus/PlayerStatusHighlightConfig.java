@@ -215,6 +215,56 @@ public interface PlayerStatusHighlightConfig extends Config
 	default int superDragonfireFeather() { return 4; }
 
 	@ConfigSection(
+			name = "Mark of Darkness Highlight",
+			description = "Change Mark of Darkness display settings",
+			position = 4
+	)
+	String MarkHighlight = "Mark of Darkness Highlight";
+
+	@ConfigItem(
+			position = 1,
+			keyName = "showMark",
+			name = "Highlight Mark of Darkness buff",
+			description = "Toggles displaying an outline when the player is under the effect of Mark of Darkness",
+			section = MarkHighlight
+	)
+	default boolean showMark()
+	{
+		return true;
+	}
+
+	@Alpha
+	@ConfigItem(
+			position = 2,
+			keyName = "markColor",
+			name = "Highlight Color",
+			description = "Selects the color to highlight the player with when super dragonfire immune",
+			section = MarkHighlight
+	)
+	default Color markColor() {
+		return new Color(0x965500CD, true);
+	}
+
+	@ConfigItem(
+			position = 3,
+			keyName = "markThickness",
+			name = "Highlight Thickness",
+			description = "Controls the thickness of the Mark of Darkness highlight",
+			section = MarkHighlight
+	)
+	default int markThickness() { return 2; }
+
+	@ConfigItem(
+			position = 4,
+			keyName = "markFeather",
+			name = "Highlight Feather",
+			description = "Controls the feather/fading effect of the Mark of Darkness highlight (max 4)",
+			section = MarkHighlight
+	)
+	@Range(max = 4)
+	default int markFeather() { return 2; }
+
+	@ConfigSection(
 			name = "Combinations",
 			description = "Configure settings for multiple simultaneous immunities",
 			position = 5
@@ -225,7 +275,7 @@ public interface PlayerStatusHighlightConfig extends Config
 			position = 1,
 			keyName = "superDragonfireAndVenomImmunityColor",
 			name = "Super Antifire + Venom Immunity",
-			description = "Selects the color to highlight the player with when immune to super dragonfire and venom.\n" +
+			description = "Selects the color to highlight the player with when immune to super dragonfire and venom.<br>" +
 					"Thickness and feather settings will be inherited from venom immunity settings.",
 			section = Combinations
 	)

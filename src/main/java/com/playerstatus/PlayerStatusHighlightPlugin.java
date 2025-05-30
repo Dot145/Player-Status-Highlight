@@ -11,7 +11,9 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -39,16 +41,20 @@ public class PlayerStatusHighlightPlugin extends Plugin
 	@Inject
 	private OverlayManager overlayManager;
 
+	private MarkHandler markHandler;
+
 	private boolean displayPoison;
 	private boolean displayVenom;
 	private boolean displayDragonfire;
 	private boolean displaySuperDragonfire;
+	private boolean displayMark;
 
 	@Override
 	protected void startUp() throws Exception
 	{
 		log.info("Player Status Highlight started!");
 		overlayManager.add(playerStatusHighlightOverlay);
+		markHandler = new MarkHandler(client);
 	}
 
 	@Override
@@ -67,6 +73,7 @@ public class PlayerStatusHighlightPlugin extends Plugin
 			displayPoison = false;
 			displayDragonfire = false;
 			displaySuperDragonfire = false;
+			displayMark = false;
 		}
 	}
 
@@ -101,6 +108,26 @@ public class PlayerStatusHighlightPlugin extends Plugin
 			final int superantifireVarbit = event.getValue();
 			displaySuperDragonfire = superantifireVarbit > 0;
 		}
+	}
+
+	@Subscribe
+	public void onChatMessage(ChatMessage event) {
+		if (event.getType().equals(ChatMessageType.GAMEMESSAGE)) {
+			String message = event.getMessage().replaceAll("<col=[a-z0-9]+>", "").replaceAll("</col>", "");
+			if (message.equals(MarkHandler.MARK_BEGIN_MESSAGE)) {
+				markHandler.activate();
+				log.debug("Mark of Darkness activated with duration {} ticks", markHandler.getTicksRemaining());
+			}
+		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event) {
+		updateMarkHandler();
+	}
+
+	private void updateMarkHandler() {
+		displayMark = markHandler.decreaseTime() && config.showMark();
 	}
 
 	@Subscribe
@@ -143,6 +170,12 @@ public class PlayerStatusHighlightPlugin extends Plugin
 				displaySuperDragonfire = true;
 			}
 		}
+		if (event.getKey().equals("showMark")) {
+			if (!config.showMark()) {
+				displayMark	= false;
+			}
+			log.debug("Mark config changed");
+		}
 	}
 
 	public HighlightProperties getHighlightProperties() {
@@ -170,6 +203,13 @@ public class PlayerStatusHighlightPlugin extends Plugin
 			//default option in case nothing is to be displayed
 			return new HighlightProperties(new Color(0,0,0,0), 0, 0);
 		}
+	}
+
+	public boolean getMarkHighlightStatus() {
+		return displayMark;
+	}
+	public HighlightProperties getMarkHighlightProperties() {
+		return new HighlightProperties(config.markColor(), config.markThickness(), config.markFeather());
 	}
 
 	@Provides

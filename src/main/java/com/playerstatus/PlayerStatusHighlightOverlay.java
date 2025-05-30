@@ -31,6 +31,11 @@ public class PlayerStatusHighlightOverlay extends Overlay {
     public Dimension render(Graphics2D graphics2D) {
         PlayerStatusHighlightPlugin.HighlightProperties hp = plugin.getHighlightProperties();
         renderer.drawOutline(client.getLocalPlayer(), hp.getOutlineWidth(), hp.getColor(), hp.getFeather());
+        // do Mark of Darkness one separately
+        if (plugin.getMarkHighlightStatus()) {
+            PlayerStatusHighlightPlugin.HighlightProperties hpMark = plugin.getMarkHighlightProperties();
+            renderer.drawOutline(client.getLocalPlayer(), hpMark.getOutlineWidth(), hpMark.getColor(), hpMark.getFeather());
+        }
         return null;
     }
 }
