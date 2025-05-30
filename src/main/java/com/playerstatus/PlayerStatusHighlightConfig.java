@@ -217,7 +217,7 @@ public interface PlayerStatusHighlightConfig extends Config
 	@ConfigSection(
 			name = "Mark of Darkness Highlight",
 			description = "Change Mark of Darkness display settings",
-			position = 4
+			position = 5
 	)
 	String MarkHighlight = "Mark of Darkness Highlight";
 
