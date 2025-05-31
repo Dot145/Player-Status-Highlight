@@ -2,19 +2,20 @@ package com.playerstatus;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
-import javax.swing.text.Highlighter;
 
+import com.playerstatus.BuffHandler.MarkHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.VarPlayer;
-import net.runelite.api.Varbits;
+import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -23,6 +24,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @PluginDescriptor(
@@ -43,11 +46,23 @@ public class PlayerStatusHighlightPlugin extends Plugin
 
 	private MarkHandler markHandler;
 
+	private static final List<Integer> divineVarbits = Arrays.asList(
+		VarbitID.DIVINEATTACK_POTION_TIME,
+		VarbitID.DIVINEBASTION_POTION_TIME,
+		VarbitID.DIVINEBATTLEMAGE_POTION_TIME,
+		VarbitID.DIVINECOMBAT_POTION_TIME,
+		VarbitID.DIVINEDEFENCE_POTION_TIME,
+		VarbitID.DIVINEMAGIC_POTION_TIME,
+		VarbitID.DIVINERANGE_POTION_TIME,
+		VarbitID.DIVINESTRENGTH_POTION_TIME
+	);
+
 	private boolean displayPoison;
 	private boolean displayVenom;
 	private boolean displayDragonfire;
 	private boolean displaySuperDragonfire;
 	private boolean displayMark;
+	private boolean displayDivine;
 
 	@Override
 	protected void startUp() throws Exception
@@ -74,12 +89,22 @@ public class PlayerStatusHighlightPlugin extends Plugin
 			displayDragonfire = false;
 			displaySuperDragonfire = false;
 			displayMark = false;
+			displayDivine = false;
+		}
+	}
+
+	@Subscribe
+	public void onActorDeath(ActorDeath actorDeath) {
+		if (actorDeath.getActor() != client.getLocalPlayer())
+			return;
+		else {
+			markHandler.deactivate();
 		}
 	}
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event) {
-		if (event.getVarpId() == VarPlayer.POISON) {
+		if (event.getVarpId() == VarPlayerID.POISON) {
 			final int poisonVarp = event.getValue();
 			if (poisonVarp < -38) {
 				if (config.showVenom()) {
@@ -100,34 +125,49 @@ public class PlayerStatusHighlightPlugin extends Plugin
 				displayVenom = false;
 			}
 		}
-		if (event.getVarbitId() == Varbits.ANTIFIRE && config.showDragonfire()) {
+		if (event.getVarbitId() == VarbitID.ANTIFIRE_POTION && config.showDragonfire()) {
 			final int antifireVarbit = event.getValue();
             displayDragonfire = antifireVarbit > 0;
 		}
-		if (event.getVarbitId() == Varbits.SUPER_ANTIFIRE && config.showSuperDragonfire()) {
+		if (event.getVarbitId() == VarbitID.SUPER_ANTIFIRE_POTION && config.showSuperDragonfire()) {
 			final int superantifireVarbit = event.getValue();
 			displaySuperDragonfire = superantifireVarbit > 0;
+		}
+		if (divineVarbits.contains(event.getVarbitId())) {
+			displayDivine = checkDivineVarbits();
 		}
 	}
 
 	@Subscribe
 	public void onChatMessage(ChatMessage event) {
 		if (event.getType().equals(ChatMessageType.GAMEMESSAGE)) {
+			log.debug("Received message \"{}\"", event.getMessage());
 			String message = event.getMessage().replaceAll("<col=[a-z0-9]+>", "").replaceAll("</col>", "");
+			log.debug("Trimmed message: \"{}\"", message);
 			if (message.equals(MarkHandler.MARK_BEGIN_MESSAGE)) {
 				markHandler.activate();
-				log.debug("Mark of Darkness activated with duration {} ticks", markHandler.getTicksRemaining());
 			}
 		}
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick event) {
-		updateMarkHandler();
+		updateHandlers();
 	}
 
-	private void updateMarkHandler() {
+	private void updateHandlers() {
 		displayMark = markHandler.decreaseTime() && config.showMark();
+	}
+
+	private boolean checkDivineVarbits() {
+		// check every divine potion time varbit to see if any are active
+		for (int varbit : divineVarbits) {
+			int varbitValue = client.getVarbitValue(varbit);
+			if (varbitValue > 0) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Subscribe
@@ -136,7 +176,7 @@ public class PlayerStatusHighlightPlugin extends Plugin
 			return;
 		}
 		if (event.getKey().equals("showPoison") || event.getKey().equals("showVenom")) {
-			int poisonVarp = client.getVarpValue(VarPlayer.POISON);
+			int poisonVarp = client.getVarpValue(VarPlayerID.POISON);
 			if (!config.showPoison()) {
 				displayPoison = false;
 			} else {
@@ -152,21 +192,21 @@ public class PlayerStatusHighlightPlugin extends Plugin
 		if (event.getKey().equals("showDragonfire")) {
 			if (!config.showDragonfire()) {
 				displayDragonfire = false;
-			} else if (client.getVarbitValue(Varbits.ANTIFIRE) > 0) {
+			} else if (client.getVarbitValue(VarbitID.ANTIFIRE_POTION) > 0) {
 				displayDragonfire = true;
 			}
 		}
 		if (event.getKey().equals("showVenom")) {
 			if (!config.showVenom()) {
 				displayVenom = false;
-			} else if (client.getVarpValue(VarPlayer.POISON) < -38) {
+			} else if (client.getVarpValue(VarPlayerID.POISON) < -38) {
 				displayVenom = true;
 			}
 		}
 		if (event.getKey().equals("showSuperDragonfire")) {
 			if (!config.showSuperDragonfire()) {
 				displaySuperDragonfire = false;
-			} else if (client.getVarbitValue(Varbits.SUPER_ANTIFIRE) > 0) {
+			} else if (client.getVarbitValue(VarbitID.SUPER_ANTIFIRE_POTION) > 0) {
 				displaySuperDragonfire = true;
 			}
 		}
@@ -174,7 +214,11 @@ public class PlayerStatusHighlightPlugin extends Plugin
 			if (!config.showMark()) {
 				displayMark	= false;
 			}
-			log.debug("Mark config changed");
+		}
+		if (event.getKey().equals("showDivine")) {
+			if (!config.showDivine()) {
+				displayDivine = false;
+			}
 		}
 	}
 
@@ -212,6 +256,13 @@ public class PlayerStatusHighlightPlugin extends Plugin
 		return new HighlightProperties(config.markColor(), config.markThickness(), config.markFeather());
 	}
 
+	public boolean getDivineHighlightStatus() {
+		return displayDivine;
+	}
+	public HighlightProperties getDivineHighlightProperties() {
+		return new HighlightProperties(config.divineColor(), config.divineThickness(), config.divineFeather());
+	}
+
 	@Provides
 	PlayerStatusHighlightConfig provideConfig(ConfigManager configManager)
 	{
@@ -228,7 +279,5 @@ public class PlayerStatusHighlightPlugin extends Plugin
 			this.outlineWidth = outlineWidth;
 			this.feather = feather;
 		}
-
-
 	}
 }
