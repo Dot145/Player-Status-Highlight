@@ -32,6 +32,11 @@ The configuration menu has a "Combinations" category for color choice combinatio
 
 ![image](https://github.com/user-attachments/assets/bfaa0cb8-7b8e-49e8-ad26-e7d2d8f0da3b)
 
+## Known Issues
+
+- The player will be highlighted for divine potions whether the config for that is selected or not. I'll get that fixed ASAP
+- Due to weirdness in how Mark of Darkness works under the hood (no varbit??), the plugin can't detect if you currently have it if you had cast it before the plugin is installed or if you logged out and back in with the buff active. To deal with this, simply cast it again after installing or logging in. This issue may not be directly fixable, although a potential fix could be to store the ticks remaining on the duration and load them when you log back in; however, this would cause strange behavior if you log in on a mobile device, as when you next logged in to RuneLite, you would still have the buff displayed even though it wouldn't be active. 
+
 ## Changelog
 
 #### v1.2: 
