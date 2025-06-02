@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.playerstatus'
-version = '1.2'
+version = '1.2.1'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
